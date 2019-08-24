@@ -30,7 +30,7 @@ import java.util.Locale;
 import static android.media.MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED;
 
 
-public class RecorderActivity extends AppCompatActivity {
+public class AudioActivity extends AppCompatActivity {
     private LineChart mChartAudio;
     private LineDataSet setUp;
     private LineDataSet setDown;
