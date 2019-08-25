@@ -27,6 +27,7 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.DefaultAxisValueFormatter;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import java.io.IOException;
 
@@ -46,6 +47,9 @@ public class AudioActivity extends AppCompatActivity {
     }
 
     private int MAX_TIME = 10000; //millisecond
+    private int UPDATE_DELAY = 10; //millisecond
+    private int MAX_X_ENTRIES = MAX_TIME / UPDATE_DELAY;
+
     private static final String LOG_TAG = "AudioActivity";
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private static String fileName = null;
@@ -70,7 +74,7 @@ public class AudioActivity extends AppCompatActivity {
         @Override
         public void run() {
             tick();
-            mHandler.postDelayed(mTickExecutor, 50);
+            mHandler.postDelayed(mTickExecutor, UPDATE_DELAY);
         }
     };
 
@@ -189,7 +193,7 @@ public class AudioActivity extends AppCompatActivity {
         mRecorder.start();
         Toast.makeText(this, "Started Recording", Toast.LENGTH_SHORT).show();
 
-        mHandler.postDelayed(mTickExecutor, 50);
+        mHandler.postDelayed(mTickExecutor, UPDATE_DELAY);
     }
 
     private void stopRecording() {
@@ -259,6 +263,7 @@ public class AudioActivity extends AppCompatActivity {
         mChartAudio.setPinchZoom(false);
         mChartAudio.setScaleXEnabled(false);
         mChartAudio.getLegend().setEnabled(false);
+        mChartAudio.setVisibleXRangeMaximum(MAX_X_ENTRIES);
 
         XAxis xaxis = mChartAudio.getXAxis();
         xaxis.setEnabled(true);
@@ -266,14 +271,14 @@ public class AudioActivity extends AppCompatActivity {
         xaxis.setDrawGridLines(true);
         xaxis.setPosition(XAxis.XAxisPosition.TOP);
         xaxis.setValueFormatter(new DefaultAxisValueFormatter(0));
+        xaxis.setAxisMaximum(MAX_X_ENTRIES);
 
 
         YAxis axisLeft = mChartAudio.getAxisLeft();
         axisLeft.setAxisMaxValue(100.0f);
         axisLeft.setAxisMinValue(-100.0f);
         axisLeft.setDrawLabels(true);
-        mChartAudio.getAxisRight().setEnabled(false);
-        mChartAudio.setVisibleXRangeMaximum(100.0f);
+
         mChartAudio.setData(new LineData());
         mChartAudio.invalidate();
 
@@ -285,11 +290,11 @@ public class AudioActivity extends AppCompatActivity {
         setXSound2 = createSet("d", "d", Color.rgb(240, 99, 99));
         setXSound.setDrawFilled(true);
         setXSound.setFillColor(Color.rgb(240, 99, 99));
-        lineData.addDataSet(this.setXSound);
+        lineData.addDataSet(setXSound);
 
         setXSound2.setDrawFilled(true);
         setXSound2.setFillColor(Color.rgb(240, 99, 99));
-        lineData.addDataSet(this.setXSound2);
+        lineData.addDataSet(setXSound2);
     }
 
     private void addEntry(float xValue, float yValue, int dataSetIndex) {
@@ -304,7 +309,7 @@ public class AudioActivity extends AppCompatActivity {
         LineDataSet set = new LineDataSet(null, "x");
 
         set.setAxisDependency(YAxis.AxisDependency.LEFT);
-        set.setLineWidth(1.3f);
+        set.setLineWidth(0.5f);
         set.setLabel(label);
         set.setColor(color);
         set.setDrawCircles(false);
