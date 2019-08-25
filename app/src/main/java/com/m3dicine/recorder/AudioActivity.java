@@ -27,7 +27,6 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.DefaultAxisValueFormatter;
-import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import java.io.IOException;
 
@@ -46,8 +45,12 @@ public class AudioActivity extends AppCompatActivity {
         PLAYING
     }
 
-    private int MAX_TIME = 10000; //millisecond
-    private int UPDATE_DELAY = 10; //millisecond
+    private long start_time = 0;
+    private long current_time = 0;
+    private double lastMax = 100.0d;
+
+    private int MAX_TIME = 20000; //millisecond
+    private int UPDATE_DELAY = 50; //millisecond
     private int MAX_X_ENTRIES = MAX_TIME / UPDATE_DELAY;
 
     private static final String LOG_TAG = "AudioActivity";
@@ -63,8 +66,7 @@ public class AudioActivity extends AppCompatActivity {
 
     ImageButton button = null;
     Button top_button = null;
-    public int counter = 10;
-    public int milliCounter = 0;
+    public int counter = 20;
 
     CountDownTimer timer = null;
 
@@ -109,7 +111,7 @@ public class AudioActivity extends AppCompatActivity {
                                 stopRecording();
                                 state = STATE.READYTOPLAY;
                                 button.setBackground(getDrawable(R.drawable.play));
-                                top_button.setText("Ready");
+                                top_button.setText(R.string.ready);
 
                             }
                         }.start();
@@ -156,12 +158,13 @@ public class AudioActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode){
-            case REQUEST_RECORD_AUDIO_PERMISSION:
-                permissionToRecordAccepted  = grantResults[0] == PackageManager.PERMISSION_GRANTED;
-                break;
+        if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
+            permissionToRecordAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
         }
-        if (!permissionToRecordAccepted ) finish();
+        if (!permissionToRecordAccepted ) {
+            Toast.makeText(this, "No permission to record", Toast.LENGTH_SHORT).show();
+            finish();
+        }
 
     }
 
@@ -191,6 +194,8 @@ public class AudioActivity extends AppCompatActivity {
         }
 
         mRecorder.start();
+        start_time = System.currentTimeMillis();
+        current_time = System.currentTimeMillis();
         Toast.makeText(this, "Started Recording", Toast.LENGTH_SHORT).show();
 
         mHandler.postDelayed(mTickExecutor, UPDATE_DELAY);
@@ -205,15 +210,31 @@ public class AudioActivity extends AppCompatActivity {
     }
 
     private void tick() {
-        milliCounter += 1;
-
         if (mRecorder != null) {
-            int amplitude = mRecorder.getMaxAmplitude();
-            //Log.d("Voice Recorder: ","amplitude: "+ amplitude);
-            addEntry(milliCounter, amplitude%100, 0); //first dataset
+            double amplitude = getAmplitudeDb();
+            current_time = System.currentTimeMillis();
+            Log.d("Voice Recorder: ","amplitude: "+ amplitude + ", " + (current_time - start_time));
+            addEntry((int)((current_time - start_time)/UPDATE_DELAY), (float)amplitude, 0); //first dataset
 
             invalidateChart(mChartAudio);
         }
+    }
+
+    private double getAmplitudeDb() {
+        return 20.0d * Math.log10(getAmplitude());
+    }
+
+    //ToDo: cleanup
+    private double getAmplitude() {
+        if (this.mRecorder == null) {
+            return this.lastMax;
+        }
+
+        double maxAmp = (double) this.mRecorder.getMaxAmplitude();
+        if (maxAmp > 2.0d) {
+            this.lastMax = maxAmp;
+        }
+        return this.lastMax;
     }
 
     private void startPlaying() {
@@ -267,7 +288,7 @@ public class AudioActivity extends AppCompatActivity {
 
         XAxis xaxis = mChartAudio.getXAxis();
         xaxis.setEnabled(true);
-        xaxis.setDrawLabels(false);
+        xaxis.setDrawLabels(true);
         xaxis.setDrawGridLines(true);
         xaxis.setPosition(XAxis.XAxisPosition.TOP);
         xaxis.setValueFormatter(new DefaultAxisValueFormatter(0));
@@ -275,8 +296,8 @@ public class AudioActivity extends AppCompatActivity {
 
 
         YAxis axisLeft = mChartAudio.getAxisLeft();
-        axisLeft.setAxisMaxValue(100.0f);
-        axisLeft.setAxisMinValue(-100.0f);
+        axisLeft.setAxisMaximum(100.0f);
+        axisLeft.setAxisMinimum(-100.0f);
         axisLeft.setDrawLabels(true);
 
         mChartAudio.setData(new LineData());
