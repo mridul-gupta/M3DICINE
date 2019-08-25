@@ -11,10 +11,13 @@ import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.PowerManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
@@ -32,8 +35,8 @@ import static android.media.MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACH
 
 public class AudioActivity extends AppCompatActivity {
     private LineChart mChartAudio;
-    private LineDataSet setUp;
-    private LineDataSet setDown;
+    private LineDataSet setXSound;
+    private LineDataSet setXSound2;
 
     public enum STATE {
         READYTORECORD,
@@ -42,23 +45,33 @@ public class AudioActivity extends AppCompatActivity {
         PLAYING
     }
 
-    private static final String LOG_TAG = "AudioRecordTest";
+    private int MAX_TIME = 10000; //millisecond
+    private static final String LOG_TAG = "AudioActivity";
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private static String fileName = null;
 
     STATE state = STATE.READYTORECORD;
-    private MediaRecorder recorder = null;
-    private MediaPlayer player = null;
+    private MediaRecorder mRecorder = null;
+    private MediaPlayer mPlayer = null;
 
-    // Requesting permission to RECORD_AUDIO
     private boolean permissionToRecordAccepted = false;
     private String [] permissions = {Manifest.permission.RECORD_AUDIO};
 
     ImageButton button = null;
     Button top_button = null;
-    public int counter = 20;
+    public int counter = 10;
 
     CountDownTimer timer = null;
+
+    private Handler mHandler = new Handler();
+
+    private Runnable mTickExecutor = new Runnable() {
+        @Override
+        public void run() {
+            tick();
+            mHandler.postDelayed(mTickExecutor,100);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,13 +95,13 @@ public class AudioActivity extends AppCompatActivity {
 
                         startRecording();
 
-                        timer = new CountDownTimer(20000, 1000){
+                        timer = new CountDownTimer(MAX_TIME, 1000){
                             public void onTick(long millisUntilFinished){
                                 top_button.setText(String.valueOf(counter));
                                 counter--;
                             }
                             public  void onFinish(){
-                                recorder.stop();
+                                stopRecording();
                                 state = STATE.READYTOPLAY;
                                 button.setBackground(getDrawable(R.drawable.play));
                                 top_button.setText("Ready");
@@ -124,6 +137,8 @@ public class AudioActivity extends AppCompatActivity {
                 }
             }
         });
+
+        setupSound();
     }
 
 
@@ -146,14 +161,13 @@ public class AudioActivity extends AppCompatActivity {
     }
 
     private void startRecording() {
-        recorder = new MediaRecorder();
-        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        recorder.setOutputFile(fileName);
-        recorder.setMaxDuration(20000);
-        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        mRecorder = new MediaRecorder();
+        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mRecorder.setOutputFile(fileName);
+        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 
-        recorder.setOnInfoListener(new MediaRecorder.OnInfoListener() {
+        mRecorder.setOnInfoListener(new MediaRecorder.OnInfoListener() {
 
             @Override
             public void onInfo(MediaRecorder mediaRecorder, int what, int i1) {
@@ -166,34 +180,58 @@ public class AudioActivity extends AppCompatActivity {
         });
 
         try {
-            recorder.prepare();
+            mRecorder.prepare();
         } catch (IOException e) {
             Log.e(LOG_TAG, "prepare() failed");
         }
 
-        recorder.start();
+        mRecorder.start();
+        Toast.makeText(this, "Started Recording", Toast.LENGTH_SHORT).show();
+
+        mHandler.postDelayed(mTickExecutor, 100);
     }
 
     private void stopRecording() {
-        recorder.stop();
-        recorder.release();
-        recorder = null;
+        mRecorder.stop();
+        mRecorder.release();
+        mRecorder = null;
+        mHandler.removeCallbacks(mTickExecutor);
+        Toast.makeText(this, "Stopped Recording", Toast.LENGTH_SHORT).show();
+    }
+
+    private void tick() {
+        if (mRecorder != null) {
+            int amplitude = mRecorder.getMaxAmplitude();
+            Log.d("Voice Recorder: ","amplitude: "+ amplitude);
+            addChartEntry(counter, amplitude, 0, mChartAudio, 100);
+        }
     }
 
     private void startPlaying() {
-        player = new MediaPlayer();
+        mPlayer = new MediaPlayer();
         try {
-            player.setDataSource(fileName);
-            player.prepare();
-            player.start();
+            mPlayer.setDataSource(fileName);
+            mPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
+            mPlayer.prepare();
+            mPlayer.start();
+            Toast.makeText(this, "Started Playing", Toast.LENGTH_SHORT).show();
+
+            mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mediaPlayer) {
+                    Toast.makeText(getApplicationContext(), "Finished Playing", Toast.LENGTH_SHORT).show();
+                }
+            });
         } catch (IOException e) {
+            Toast.makeText(this, "Failed to play", Toast.LENGTH_SHORT).show();
             Log.e(LOG_TAG, "prepare() failed");
         }
     }
 
     private void stopPlaying() {
-        player.release();
-        player = null;
+        mPlayer.release();
+        mPlayer = null;
+        Toast.makeText(this, "Stopped Playing", Toast.LENGTH_SHORT).show();
     }
 
     private void invalidateChart(LineChart chart) {
@@ -259,12 +297,12 @@ public class AudioActivity extends AppCompatActivity {
         this.mChartAudio.setGridBackgroundColor(Color.rgb(240, 99, 99));
         LineData data = this.mChartAudio.getData();
 
-        LineDataSet setXSound = createSet("dbplus", "dbplus", Color.rgb(240, 99, 99));
+        setXSound = createSet("dbplus", "dbplus", Color.rgb(240, 99, 99));
         setXSound.setDrawFilled(true);
         setXSound.setFillColor(Color.rgb(240, 99, 99));
         data.addDataSet(setXSound);
 
-        LineDataSet setXSound2 = createSet("dbminus", "dbminus", Color.rgb(240, 99, 99));
+        setXSound2 = createSet("dbminus", "dbminus", Color.rgb(240, 99, 99));
         setXSound2.setDrawFilled(true);
         setXSound2.setFillColor(Color.rgb(240, 99, 99));
         data.addDataSet(setXSound2);
@@ -272,7 +310,6 @@ public class AudioActivity extends AppCompatActivity {
 
         this.mChartAudio.invalidate();
     }
-
 
     private void addChartEntry(float xValue, float yValue, int upDown, LineChart chart, int maxEntries) {
         LineData data = chart.getData();
@@ -294,10 +331,10 @@ public class AudioActivity extends AppCompatActivity {
             }
             switch (upDown) {
                 case 0:
-                    this.setUp.setLabel("x: " + formattedNumber);
+                    this.setXSound.setLabel("x: " + formattedNumber);
                     return;
                 case 1:
-                    this.setDown.setLabel("y: " + formattedNumber);
+                    this.setXSound2.setLabel("y: " + formattedNumber);
                     return;
                 default:
                     return;
