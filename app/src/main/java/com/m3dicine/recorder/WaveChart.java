@@ -56,17 +56,17 @@ public class WaveChart {
 
         LineData lineData = mChartAudio.getData();
         LineDataSet setXSound = createSet("u", "u", Color.rgb(240, 99, 99));
-        LineDataSet setXSound2 = createSet("d", "d", Color.rgb(240, 99, 99));
         setXSound.setDrawFilled(true);
         setXSound.setFillColor(Color.rgb(240, 99, 99));
         lineData.addDataSet(setXSound);
 
+        LineDataSet setXSound2 = createSet("d", "d", Color.rgb(240, 99, 99));
         setXSound2.setDrawFilled(true);
         setXSound2.setFillColor(Color.rgb(240, 99, 99));
         lineData.addDataSet(setXSound2);
     }
 
-    public void addEntry(float xValue, float yValue, int dataSetIndex) {
+    void addEntry(float xValue, float yValue, int dataSetIndex) {
         LineData data = mChartAudio.getData();
         if (data != null) {
             data.addEntry(new Entry(xValue, yValue), dataSetIndex);
@@ -84,12 +84,13 @@ public class WaveChart {
         set.setDrawCircles(false);
         set.setHighlightEnabled(false);
         set.setDrawValues(false);
+        set.setFillAlpha(65);
         set.setAxisDependency(YAxis.AxisDependency.LEFT);
-        set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        //set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
         return set;
     }
 
-    public void invalidateChart(LineChart chart) {
+    private void invalidateChart(LineChart chart) {
         chart.notifyDataSetChanged();
         chart.getData().notifyDataChanged();
         chart.invalidate();
