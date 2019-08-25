@@ -2,7 +2,6 @@ package com.m3dicine.recorder;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -20,13 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.Description;
-import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.components.YAxis;
-import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.formatter.DefaultAxisValueFormatter;
 
 import java.io.IOException;
 
@@ -34,9 +27,8 @@ import static android.media.MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACH
 
 
 public class AudioActivity extends AppCompatActivity {
-    private LineChart mChartAudio;
-    private LineDataSet setXSound;
-    private LineDataSet setXSound2;
+
+    WaveChart mChart = new WaveChart();
 
     public enum STATE {
         READYTORECORD,
@@ -91,6 +83,7 @@ public class AudioActivity extends AppCompatActivity {
 
         button = findViewById(R.id.bt_action);
         top_button = findViewById(R.id.bt_top_button);
+        LineChart mChartAudio = findViewById(R.id.chart_audio);
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -145,15 +138,8 @@ public class AudioActivity extends AppCompatActivity {
             }
         });
 
-        setupChart();
+        mChart.setupChart(mChartAudio);
     }
-
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -213,10 +199,8 @@ public class AudioActivity extends AppCompatActivity {
         if (mRecorder != null) {
             double amplitude = getAmplitudeDb();
             current_time = System.currentTimeMillis();
-            Log.d("Voice Recorder: ","amplitude: "+ amplitude + ", " + (current_time - start_time));
-            addEntry((int)((current_time - start_time)/UPDATE_DELAY), (float)amplitude, 0); //first dataset
-
-            invalidateChart(mChartAudio);
+            //Log.d("Voice Recorder: ","amplitude: "+ amplitude + ", " + (current_time - start_time));
+            mChart.addEntry((int)((current_time - start_time)/UPDATE_DELAY), (float)amplitude, 0); //first dataset
         }
     }
 
@@ -268,86 +252,5 @@ public class AudioActivity extends AppCompatActivity {
         mPlayer.release();
         mPlayer = null;
         Toast.makeText(this, "Finished Playing", Toast.LENGTH_SHORT).show();
-    }
-
-    private void setupChart() {
-        mChartAudio = findViewById(R.id.chart_audio);
-        mChartAudio.setDrawGridBackground(false);
-        mChartAudio.setTouchEnabled(true);
-        mChartAudio.setHighlightPerTapEnabled(false);
-        mChartAudio.setDescription(new Description());
-        mChartAudio.setDragEnabled(false);
-        mChartAudio.setTouchEnabled(false);
-        mChartAudio.setScaleEnabled(true);
-        mChartAudio.setScaleYEnabled(true);
-        mChartAudio.setExtraLeftOffset(-8.0f);
-        mChartAudio.setPinchZoom(false);
-        mChartAudio.setScaleXEnabled(false);
-        mChartAudio.getLegend().setEnabled(false);
-        mChartAudio.setVisibleXRangeMaximum(MAX_X_ENTRIES);
-
-        XAxis xaxis = mChartAudio.getXAxis();
-        xaxis.setEnabled(true);
-        xaxis.setDrawLabels(true);
-        xaxis.setDrawGridLines(true);
-        xaxis.setPosition(XAxis.XAxisPosition.TOP);
-        xaxis.setValueFormatter(new DefaultAxisValueFormatter(0));
-        xaxis.setAxisMaximum(MAX_X_ENTRIES);
-
-
-        YAxis axisLeft = mChartAudio.getAxisLeft();
-        axisLeft.setAxisMaximum(100.0f);
-        axisLeft.setAxisMinimum(-100.0f);
-        axisLeft.setDrawLabels(true);
-
-        mChartAudio.setData(new LineData());
-        mChartAudio.invalidate();
-
-        mChartAudio.getAxisRight().setEnabled(false);
-
-
-        LineData lineData = mChartAudio.getData();
-        setXSound = createSet("u", "u", Color.rgb(240, 99, 99));
-        setXSound2 = createSet("d", "d", Color.rgb(240, 99, 99));
-        setXSound.setDrawFilled(true);
-        setXSound.setFillColor(Color.rgb(240, 99, 99));
-        lineData.addDataSet(setXSound);
-
-        setXSound2.setDrawFilled(true);
-        setXSound2.setFillColor(Color.rgb(240, 99, 99));
-        lineData.addDataSet(setXSound2);
-    }
-
-    private void addEntry(float xValue, float yValue, int dataSetIndex) {
-        LineData data = mChartAudio.getData();
-        if (data != null) {
-            data.addEntry(new Entry(xValue, yValue), dataSetIndex);
-        }
-        data.notifyDataChanged();
-    }
-
-    private LineDataSet createSet (String label, String setName, int color) {
-        LineDataSet set = new LineDataSet(null, "x");
-
-        set.setAxisDependency(YAxis.AxisDependency.LEFT);
-        set.setLineWidth(0.5f);
-        set.setLabel(label);
-        set.setColor(color);
-        set.setDrawCircles(false);
-        set.setHighlightEnabled(false);
-        set.setDrawValues(false);
-        set.setAxisDependency(YAxis.AxisDependency.LEFT);
-        set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-        return set;
-    }
-
-    private void invalidateChart(LineChart chart) {
-        chart.notifyDataSetChanged();
-        chart.getData().notifyDataChanged();
-        chart.invalidate();
-
-        chart.notifyDataSetChanged();
-        chart.getData().notifyDataChanged();
-        chart.invalidate();
     }
 }
