@@ -200,8 +200,8 @@ public class AudioActivity extends AppCompatActivity {
             double amplitude = getAmplitudeDb();
             current_time = System.currentTimeMillis();
             //Log.d("Voice Recorder: ","amplitude: "+ amplitude + ", " + (current_time - start_time));
-            mChart.addEntry((int)((current_time - start_time)/UPDATE_DELAY), (float)amplitude, 0); //first dataset
-            mChart.addEntry((int)((current_time - start_time)/UPDATE_DELAY), (float)-amplitude, 1); //second dataset
+            mChart.addEntry((int)((current_time - start_time)/UPDATE_DELAY), (float)amplitude - 10.0f, 0); //first dataset
+            mChart.addEntry((int)((current_time - start_time)/UPDATE_DELAY), (float)-amplitude + 10.0f, 1); //second dataset
         }
     }
 

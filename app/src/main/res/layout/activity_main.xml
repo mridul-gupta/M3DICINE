@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:text="Recording View"
+        android:text="@string/recording_view"
         android:textAlignment="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -22,7 +22,7 @@
         android:layout_height="32dp"
         android:layout_marginTop="64dp"
         android:background="@drawable/button_style"
-        android:text="Ready"
+        android:text="@string/ready"
         android:enabled="false"
         android:textAllCaps="false"
         android:textColor="@android:color/white"
@@ -34,9 +34,7 @@
         android:id="@+id/chart_audio"
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="8dp"
         android:clickable="false"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -50,7 +48,8 @@
         android:background="@drawable/record"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/chart_audio" />
+        app:layout_constraintTop_toBottomOf="@+id/chart_audio"
+        android:contentDescription="@string/recording_view" />
 
     <Button
         android:id="@+id/bottom_button"
@@ -59,7 +58,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
         android:background="@drawable/button_style_nofill"
-        android:text="Playback Now"
+        android:text="@string/playback_now"
         android:textAllCaps="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

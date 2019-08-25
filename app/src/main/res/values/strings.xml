@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">M3DICINE TEST</string>
     <string name="ready">Ready</string>
+    <string name="recording_view">Recording View</string>
+    <string name="playback_now">Playback Now</string>
 </resources>

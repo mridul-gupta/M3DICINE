@@ -11,34 +11,35 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.DefaultAxisValueFormatter;
 
-public class WaveChart {
+class WaveChart {
     private LineChart mChartAudio = null;
 
     private int MAX_TIME = 20000; //millisecond
     private int UPDATE_DELAY = 50; //millisecond
     private int MAX_X_ENTRIES = MAX_TIME / UPDATE_DELAY;
 
-    public void setupChart(LineChart mChartAudio) {
+    void setupChart(LineChart mChartAudio) {
         this.mChartAudio = mChartAudio;
         mChartAudio.setDrawGridBackground(false);
-        mChartAudio.setTouchEnabled(true);
+        mChartAudio.setTouchEnabled(false);
         mChartAudio.setHighlightPerTapEnabled(false);
-        mChartAudio.setDescription(new Description());
+        mChartAudio.setDescription(null);
         mChartAudio.setDragEnabled(false);
         mChartAudio.setTouchEnabled(false);
-        mChartAudio.setScaleEnabled(true);
-        mChartAudio.setScaleYEnabled(true);
-        mChartAudio.setExtraLeftOffset(-8.0f);
+        mChartAudio.setScaleEnabled(false);
+        mChartAudio.setScaleYEnabled(false);
+        mChartAudio.setViewPortOffsets(0, 0, 0, 0);
         mChartAudio.setPinchZoom(false);
+        mChartAudio.setDrawBorders(false);
         mChartAudio.setScaleXEnabled(false);
         mChartAudio.getLegend().setEnabled(false);
         mChartAudio.setVisibleXRangeMaximum(MAX_X_ENTRIES);
 
         XAxis xaxis = mChartAudio.getXAxis();
         xaxis.setEnabled(true);
-        xaxis.setDrawLabels(true);
-        xaxis.setDrawGridLines(true);
-        xaxis.setPosition(XAxis.XAxisPosition.TOP);
+        xaxis.setDrawLabels(false);
+        xaxis.setDrawGridLines(false);
+        xaxis.setDrawAxisLine(false);
         xaxis.setValueFormatter(new DefaultAxisValueFormatter(0));
         xaxis.setAxisMaximum(MAX_X_ENTRIES);
 
@@ -46,7 +47,10 @@ public class WaveChart {
         YAxis axisLeft = mChartAudio.getAxisLeft();
         axisLeft.setAxisMaximum(100.0f);
         axisLeft.setAxisMinimum(-100.0f);
-        axisLeft.setDrawLabels(true);
+        axisLeft.setDrawAxisLine(false);
+        axisLeft.setDrawLabels(false);
+        axisLeft.setDrawGridLines(false);
+        axisLeft.setDrawZeroLine(true);
 
         mChartAudio.setData(new LineData());
         mChartAudio.invalidate();
@@ -55,14 +59,14 @@ public class WaveChart {
 
 
         LineData lineData = mChartAudio.getData();
-        LineDataSet setXSound = createSet("u", "u", Color.rgb(240, 99, 99));
+        LineDataSet setXSound = createSet("u", "u", R.color.blue);
         setXSound.setDrawFilled(true);
-        setXSound.setFillColor(Color.rgb(240, 99, 99));
+        setXSound.setFillColor(R.color.blue);
         lineData.addDataSet(setXSound);
 
-        LineDataSet setXSound2 = createSet("d", "d", Color.rgb(240, 99, 99));
+        LineDataSet setXSound2 = createSet("d", "d", R.color.blue);
         setXSound2.setDrawFilled(true);
-        setXSound2.setFillColor(Color.rgb(240, 99, 99));
+        setXSound2.setFillColor(R.color.blue);
         lineData.addDataSet(setXSound2);
     }
 
@@ -84,7 +88,6 @@ public class WaveChart {
         set.setDrawCircles(false);
         set.setHighlightEnabled(false);
         set.setDrawValues(false);
-        set.setFillAlpha(65);
         set.setAxisDependency(YAxis.AxisDependency.LEFT);
         //set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
         return set;
