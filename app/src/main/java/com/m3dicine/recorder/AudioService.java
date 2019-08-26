@@ -11,8 +11,8 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 
-class SoundService {
-    private static final String LOG_TAG = SoundService.class.getSimpleName();
+class AudioService {
+    private static final String LOG_TAG = AudioService.class.getSimpleName();
     private Context context;
     private MediaRecorder mRecorder = null;
     private MediaPlayer mPlayer = null;
@@ -26,11 +26,11 @@ class SoundService {
     private Boolean running = false;
 
 
-    final ArrayList<Double> sounds; //index, amp
+    final ArrayList<Double> amplitudes; //index, amp
 
-    SoundService(Context mContext) {
+    AudioService(Context mContext) {
         this.context = mContext;
-        sounds = new ArrayList<>();
+        amplitudes = new ArrayList<>();
 
         fileName = Objects.requireNonNull(context.getExternalCacheDir()).getAbsolutePath();
         fileName += "/audiorecordtest.3gp";
@@ -72,11 +72,11 @@ class SoundService {
             @Override
             public void run() {
                 while (running) {
-                    //Log.d("Added Index: ", "" + sounds.size());
+                    //Log.d("Added Index: ", "" + amplitudes.size());
                     int indexTo = (int) ((System.currentTimeMillis() - start_time) / UPDATE_DELAY);
 
-                    for (int i = sounds.size(); i < indexTo; i++) {
-                        sounds.add(i, getAmplitudeDb());
+                    for (int i = amplitudes.size(); i < indexTo; i++) {
+                        amplitudes.add(i, getAmplitudeDb());
                     }
 
                     try {

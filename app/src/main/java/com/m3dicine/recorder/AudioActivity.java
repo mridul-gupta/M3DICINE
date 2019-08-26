@@ -23,7 +23,7 @@ public class AudioActivity extends AppCompatActivity {
     private static final String LOG_TAG = AudioActivity.class.getSimpleName();
 
     WaveChart mChart = new WaveChart();
-    public SoundService soundService;
+    public AudioService audioService;
 
     public enum STATE {
         READYTORECORD,
@@ -75,7 +75,7 @@ public class AudioActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        soundService = new SoundService(this);
+        audioService = new AudioService(this);
         ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
 
         button = findViewById(R.id.bt_action);
@@ -94,7 +94,7 @@ public class AudioActivity extends AppCompatActivity {
                         state = STATE.RECORDING;
                         button.setBackground(getDrawable(R.drawable.stop));
 
-                        soundService.startRecording();
+                        audioService.startRecording();
                         mHandler.postDelayed(mTickExecutor, UPDATE_DELAY);
                         uiCountdownTimer();
                         break;
@@ -103,7 +103,7 @@ public class AudioActivity extends AppCompatActivity {
                         state = STATE.READYTORECORD;
                         button.setBackground(getDrawable(R.drawable.record));
 
-                        soundService.stopRecording();
+                        audioService.stopRecording();
                         mHandler.removeCallbacks(mTickExecutor);
                         timer.cancel();
                         break;
@@ -111,14 +111,14 @@ public class AudioActivity extends AppCompatActivity {
                     case READYTOPLAY:
                         state = STATE.PLAYING;
                         button.setBackground(getDrawable(R.drawable.stop));
-                        soundService.startPlaying();
+                        audioService.startPlaying();
                         mHandler.postDelayed(mPlayTickExecutor, UPDATE_DELAY);
                         break;
 
                     case PLAYING:
                         state = STATE.READYTOPLAY;
                         button.setBackground(getDrawable(R.drawable.play));
-                        soundService.stopPlaying();
+                        audioService.stopPlaying();
                         break;
 
                     default:
@@ -147,12 +147,12 @@ public class AudioActivity extends AppCompatActivity {
 
     private void tick() {
         if (state == STATE.RECORDING) {
-            int currentIndex = soundService.sounds.size();
+            int currentIndex = audioService.amplitudes.size();
 
 
             //Log.d("Plotting: ","used: "+ usedIndex + ", current: " + currentIndex);
             for (int i = usedIndex; i < currentIndex; i++) {
-                double amplitude = soundService.sounds.get(i);
+                double amplitude = audioService.amplitudes.get(i);
                 //Log.d("Voice Recorder: ","amplitude: "+ amplitude + ", " + (current_time - start_time));
                 mChart.addEntry(i, (float) amplitude - 10.0f, 0); //first dataset
                 mChart.addEntry(i, (float) -amplitude + 10.0f, 1); //second dataset
@@ -169,7 +169,7 @@ public class AudioActivity extends AppCompatActivity {
             }
 
             public void onFinish() {
-                soundService.stopRecording();
+                audioService.stopRecording();
                 state = STATE.READYTOPLAY;
                 button.setBackground(getDrawable(R.drawable.play));
                 top_button.setText(R.string.ready);
@@ -181,7 +181,7 @@ public class AudioActivity extends AppCompatActivity {
     private void updatePlayingUI() {
         View playHead = findViewById(R.id.v_playhead);
         playHead.setVisibility(View.VISIBLE);
-        int curr = soundService.getPlayProgress();
+        int curr = audioService.getPlayProgress();
 
         playHead.setTranslationX(curr * (displayWidth / 20000f));
     }
