@@ -2,12 +2,9 @@ package com.m3dicine.recorder;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.media.MediaPlayer;
-import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
-import android.os.PowerManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -20,14 +17,12 @@ import androidx.core.app.ActivityCompat;
 
 import com.github.mikephil.charting.charts.LineChart;
 
-import java.io.IOException;
-
-import static android.media.MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED;
-
 
 public class AudioActivity extends AppCompatActivity {
+    private static final String LOG_TAG = AudioActivity.class.getSimpleName();
 
     WaveChart mChart = new WaveChart();
+    public SoundService soundService;
 
     public enum STATE {
         READYTORECORD,
@@ -36,21 +31,13 @@ public class AudioActivity extends AppCompatActivity {
         PLAYING
     }
 
-    private long start_time = 0;
-    private long current_time = 0;
-    private double lastMax = 100.0d;
 
     private int MAX_TIME = 20000; //millisecond
     private int UPDATE_DELAY = 50; //millisecond
-    private int MAX_X_ENTRIES = MAX_TIME / UPDATE_DELAY;
 
-    private static final String LOG_TAG = "AudioActivity";
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
-    private static String fileName = null;
 
     STATE state = STATE.READYTORECORD;
-    private MediaRecorder mRecorder = null;
-    private MediaPlayer mPlayer = null;
 
     private boolean permissionToRecordAccepted = false;
     private String[] permissions = {Manifest.permission.RECORD_AUDIO};
@@ -61,6 +48,7 @@ public class AudioActivity extends AppCompatActivity {
 
     CountDownTimer timer = null;
 
+    int usedIndex = 0;
     private Handler mHandler = new Handler();
 
     private Runnable mTickExecutor = new Runnable() {
@@ -76,8 +64,7 @@ public class AudioActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        fileName = getExternalCacheDir().getAbsolutePath();
-        fileName += "/audiorecordtest.3gp";
+        soundService = new SoundService(this);
         ActivityCompat.requestPermissions(this, permissions, REQUEST_RECORD_AUDIO_PERMISSION);
 
         button = findViewById(R.id.bt_action);
@@ -92,48 +79,36 @@ public class AudioActivity extends AppCompatActivity {
                         state = STATE.RECORDING;
                         button.setBackground(getDrawable(R.drawable.stop));
 
-                        startRecording();
-
-                        timer = new CountDownTimer(MAX_TIME, 1000) {
-                            public void onTick(long millisUntilFinished) {
-                                top_button.setText(String.valueOf(counter));
-                                counter--;
-                            }
-
-                            public void onFinish() {
-                                stopRecording();
-                                state = STATE.READYTOPLAY;
-                                button.setBackground(getDrawable(R.drawable.play));
-                                top_button.setText(R.string.ready);
-
-                            }
-                        }.start();
-
+                        soundService.startRecording();
+                        mHandler.postDelayed(mTickExecutor, UPDATE_DELAY);
+                        uiCountdownTimer();
                         break;
 
                     case RECORDING:
                         state = STATE.READYTORECORD;
                         button.setBackground(getDrawable(R.drawable.record));
 
-                        stopRecording();
+                        soundService.stopRecording();
+                        mHandler.removeCallbacks(mTickExecutor);
                         timer.cancel();
                         break;
 
                     case READYTOPLAY:
                         state = STATE.PLAYING;
                         button.setBackground(getDrawable(R.drawable.stop));
-                        startPlaying();
+                        soundService.startPlaying();
                         break;
 
                     case PLAYING:
                         state = STATE.READYTOPLAY;
                         button.setBackground(getDrawable(R.drawable.play));
-                        stopPlaying();
+                        soundService.stopPlaying();
                         break;
 
                     default:
                         state = STATE.READYTORECORD;
                         button.setBackground(getDrawable(R.drawable.record));
+                        Log.e(LOG_TAG, "Wrong state");
                 }
             }
         });
@@ -151,107 +126,39 @@ public class AudioActivity extends AppCompatActivity {
             Toast.makeText(this, "No permission to record", Toast.LENGTH_SHORT).show();
             finish();
         }
-
     }
 
-    private void startRecording() {
-        mRecorder = new MediaRecorder();
-        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mRecorder.setOutputFile(fileName);
-        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-
-        mRecorder.setOnInfoListener(new MediaRecorder.OnInfoListener() {
-
-            @Override
-            public void onInfo(MediaRecorder mediaRecorder, int what, int i1) {
-                if (what == MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) {
-                    mediaRecorder.stop();
-                    state = STATE.READYTOPLAY;
-                    button.setBackground(getDrawable(R.drawable.play));
-                }
-            }
-        });
-
-        try {
-            mRecorder.prepare();
-        } catch (IOException e) {
-            Log.e(LOG_TAG, "prepare() failed");
-        }
-
-        mRecorder.start();
-        start_time = System.currentTimeMillis();
-        current_time = System.currentTimeMillis();
-        Toast.makeText(this, "Started Recording", Toast.LENGTH_SHORT).show();
-
-        mHandler.postDelayed(mTickExecutor, UPDATE_DELAY);
-    }
-
-    private void stopRecording() {
-        mRecorder.stop();
-        mRecorder.release();
-        mRecorder = null;
-        mHandler.removeCallbacks(mTickExecutor);
-        Toast.makeText(this, "Stopped Recording", Toast.LENGTH_SHORT).show();
-    }
 
     private void tick() {
-        if (mRecorder != null) {
-            double amplitude = getAmplitudeDb();
-            current_time = System.currentTimeMillis();
-            //Log.d("Voice Recorder: ","amplitude: "+ amplitude + ", " + (current_time - start_time));
-            mChart.addEntry((int) ((current_time - start_time) / UPDATE_DELAY), (float) amplitude - 10.0f, 0); //first dataset
-            mChart.addEntry((int) ((current_time - start_time) / UPDATE_DELAY), (float) -amplitude + 10.0f, 1); //second dataset
+        if (state == STATE.RECORDING) {
+            int currentIndex = soundService.sounds.size();
+
+
+            //Log.d("Plotting: ","used: "+ usedIndex + ", current: " + currentIndex);
+            for (int i = usedIndex; i < currentIndex; i++) {
+                double amplitude = soundService.sounds.get(i);
+                //Log.d("Voice Recorder: ","amplitude: "+ amplitude + ", " + (current_time - start_time));
+                mChart.addEntry(i, (float) amplitude - 10.0f, 0); //first dataset
+                mChart.addEntry(i, (float) -amplitude + 10.0f, 1); //second dataset
+            }
+            usedIndex = currentIndex;
         }
     }
 
-    private double getAmplitudeDb() {
-        return 20.0d * Math.log10(getAmplitude());
-    }
+    private void uiCountdownTimer() {
+        timer = new CountDownTimer(MAX_TIME, 1000) {
+            public void onTick(long millisUntilFinished) {
+                top_button.setText(String.valueOf(counter));
+                counter--;
+            }
 
-    //ToDo: cleanup
-    private double getAmplitude() {
-        if (this.mRecorder == null) {
-            return this.lastMax;
-        }
+            public void onFinish() {
+                soundService.stopRecording();
+                state = STATE.READYTOPLAY;
+                button.setBackground(getDrawable(R.drawable.play));
+                top_button.setText(R.string.ready);
 
-        double maxAmp = (double) this.mRecorder.getMaxAmplitude();
-        if (maxAmp > 2.0d) {
-            this.lastMax = maxAmp;
-        }
-        return this.lastMax;
-    }
-
-    private void startPlaying() {
-        mPlayer = new MediaPlayer();
-        try {
-            mPlayer.setDataSource(fileName);
-            mPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
-            mPlayer.prepare();
-            mPlayer.start();
-            Toast.makeText(this, "Started Playing", Toast.LENGTH_SHORT).show();
-
-            mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mediaPlayer) {
-                    finishPlaying();
-                }
-            });
-        } catch (IOException e) {
-            Toast.makeText(this, "Failed to play", Toast.LENGTH_SHORT).show();
-            Log.e(LOG_TAG, "prepare() failed");
-        }
-    }
-
-    private void stopPlaying() {
-        mPlayer.release();
-        mPlayer = null;
-        Toast.makeText(this, "Stopped Playing", Toast.LENGTH_SHORT).show();
-    }
-
-    private void finishPlaying() {
-        mPlayer.release();
-        mPlayer = null;
-        Toast.makeText(this, "Finished Playing", Toast.LENGTH_SHORT).show();
+            }
+        }.start();
     }
 }

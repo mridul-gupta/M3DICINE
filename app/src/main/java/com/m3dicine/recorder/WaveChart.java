@@ -1,9 +1,6 @@
 package com.m3dicine.recorder;
 
-import android.graphics.Color;
-
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
@@ -15,7 +12,7 @@ class WaveChart {
     private LineChart mChartAudio = null;
 
     private int MAX_TIME = 20000; //millisecond
-    private int UPDATE_DELAY = 50; //millisecond
+    private int UPDATE_DELAY = 20; //millisecond
     private int MAX_X_ENTRIES = MAX_TIME / UPDATE_DELAY;
 
     void setupChart(LineChart mChartAudio) {
