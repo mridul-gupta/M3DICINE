@@ -52,7 +52,6 @@ class AudioService {
 
         mRecorder.start();
         start_time = System.currentTimeMillis();
-        //Toast.makeText(context, "Started Recording", Toast.LENGTH_SHORT).show();
 
         startUpdateData();
     }
@@ -65,8 +64,6 @@ class AudioService {
             amplitudes.clear();
         }
         running = false;
-
-        //Toast.makeText(context, "Stopped Recording", Toast.LENGTH_SHORT).show();
     }
 
     private void startUpdateData() {
@@ -77,7 +74,6 @@ class AudioService {
             public void run() {
                 while (running) {
                     try {
-                        //Log.d("Added Index: ", "" + amplitudes.size());
                         int indexTo = (int) ((System.currentTimeMillis() - start_time) / DATA_COLLECTION_FREQ);
 
                         for (int i = amplitudes.size(); i < indexTo; i++) {
@@ -105,7 +101,7 @@ class AudioService {
                 this.lastMax = maxAmp;
             }
         } catch (Exception e) {
-            //e.printStackTrace(); //Not handled
+            //Not handled
         }
         return this.lastMax;
     }
@@ -117,7 +113,6 @@ class AudioService {
             mPlayer.setWakeMode(context.getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             mPlayer.prepare();
             mPlayer.start();
-            //Toast.makeText(context, "Started Playing", Toast.LENGTH_SHORT).show();
 
             mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                 @Override
@@ -126,7 +121,6 @@ class AudioService {
                 }
             });
         } catch (IOException e) {
-            //Toast.makeText(context, "Failed to play", Toast.LENGTH_SHORT).show();
             Log.e(LOG_TAG, "prepare() failed");
         }
     }
@@ -143,7 +137,6 @@ class AudioService {
             mPlayer.release();
             mPlayer = null;
         }
-        //Toast.makeText(context, "Stopped Playing", Toast.LENGTH_SHORT).show();
     }
 
     private void finishPlaying() {
@@ -151,6 +144,5 @@ class AudioService {
             mPlayer.release();
             mPlayer = null;
         }
-        //Toast.makeText(context, "Finished Playing", Toast.LENGTH_SHORT).show();
     }
 }

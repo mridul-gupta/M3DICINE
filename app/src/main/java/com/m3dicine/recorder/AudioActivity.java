@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -30,10 +31,12 @@ public class AudioActivity extends AppCompatActivity {
     private AudioService audioService;
     private WaveChart mChart = new WaveChart();
 
+    private TextView    textStatus = null;
+    private Button      buttonTopStatus = null;
+    private LineChart   viewChartAudio = null;
+    private View        playHead = null;
     private ImageButton buttonRecordPlay = null;
-    private Button buttonTopStatus = null;
-    private Button buttonBottom = null;
-    private LineChart viewChartAudio = null;
+    private Button      buttonBottom = null;
 
     public int countdownCounter = Utils.MAX_TIME / 1000;
     private CountDownTimer timer = null;
@@ -66,10 +69,12 @@ public class AudioActivity extends AppCompatActivity {
         audioService = new AudioService(this);
         ActivityCompat.requestPermissions(this, permissions, Utils.REQUEST_RECORD_AUDIO_PERMISSION);
 
-        buttonRecordPlay = findViewById(R.id.bt_recordplay);
-        buttonTopStatus = findViewById(R.id.bt_status);
-        buttonBottom = findViewById(R.id.bt_bottom);
-        viewChartAudio = findViewById(R.id.chart_audio);
+        textStatus          = findViewById(R.id.tv_view_name);
+        buttonTopStatus     = findViewById(R.id.bt_status);
+        viewChartAudio      = findViewById(R.id.chart_audio);
+        playHead            = findViewById(R.id.v_playhead);
+        buttonRecordPlay    = findViewById(R.id.bt_recordplay);
+        buttonBottom        = findViewById(R.id.bt_bottom);
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -103,13 +108,31 @@ public class AudioActivity extends AppCompatActivity {
             }
         });
 
+        buttonBottom.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                switch (state) {
+                    case READYTOPLAY:
+                    case PLAYING:
+                        stopPlaying();
+                        stopRecording();
+                        break;
+
+                    case RECORDING:
+                    case READYTORECORD:
+                    default:
+                        //Do nothing
+                }
+            }
+        });
+
         mChart.setupChart(viewChartAudio);
     }
 
     private void startRecording() {
         state = Utils.STATE.RECORDING;
         buttonRecordPlay.setBackground(getDrawable(R.drawable.stop));
-        buttonBottom.setEnabled(true);
+        buttonBottom.setEnabled(false);
 
         audioService.startRecording();
         mHandler.postDelayed(mTickExecutor, Utils.UI_UPDATE_FREQ);
@@ -118,8 +141,10 @@ public class AudioActivity extends AppCompatActivity {
 
     private void stopRecording() {
         state = Utils.STATE.READYTORECORD;
+        textStatus.setText(R.string.recording_view);
         buttonRecordPlay.setBackground(getDrawable(R.drawable.record));
         buttonTopStatus.setText(R.string.ready);
+        buttonBottom.setText(R.string.playback_now);
         buttonBottom.setEnabled(false);
 
         viewChartAudio.clearValues();
@@ -135,6 +160,7 @@ public class AudioActivity extends AppCompatActivity {
     private void startPlaying() {
         state = Utils.STATE.PLAYING;
         buttonRecordPlay.setBackground(getDrawable(R.drawable.stop));
+        playHead.setVisibility(View.VISIBLE);
         audioService.startPlaying();
         mHandler.postDelayed(mPlayTickExecutor, Utils.UI_UPDATE_FREQ);
     }
@@ -142,6 +168,10 @@ public class AudioActivity extends AppCompatActivity {
     private void stopPlaying() {
         state = Utils.STATE.READYTOPLAY;
         buttonRecordPlay.setBackground(getDrawable(R.drawable.play));
+        mHandler.removeCallbacks(mPlayTickExecutor);
+
+        playHead.setVisibility(View.GONE);
+        playHead.setTranslationX(0);
         audioService.stopPlaying();
     }
 
@@ -190,16 +220,17 @@ public class AudioActivity extends AppCompatActivity {
             public void onFinish() {
                 audioService.stopRecording();
                 state = Utils.STATE.READYTOPLAY;
+                textStatus.setText(R.string.playback_view);
                 buttonRecordPlay.setBackground(getDrawable(R.drawable.play));
                 buttonTopStatus.setText(R.string.ready);
+                buttonBottom.setText(R.string.back_rec);
+                buttonBottom.setEnabled(true);
 
             }
         }.start();
     }
 
     private void updatePlayingUI() {
-        View playHead = findViewById(R.id.v_playhead);
-        playHead.setVisibility(View.VISIBLE);
         int curr = audioService.getPlayProgress();
 
         playHead.setTranslationX(curr * (displayWidth / 20000f));
