@@ -56,12 +56,12 @@ class WaveChart {
 
 
         LineData lineData = mChartAudio.getData();
-        LineDataSet setXSound = createSet("u", "u", R.color.blue);
+        LineDataSet setXSound = createSet();
         setXSound.setDrawFilled(true);
         setXSound.setFillColor(R.color.blue);
         lineData.addDataSet(setXSound);
 
-        LineDataSet setXSound2 = createSet("d", "d", R.color.blue);
+        LineDataSet setXSound2 = createSet();
         setXSound2.setDrawFilled(true);
         setXSound2.setFillColor(R.color.blue);
         lineData.addDataSet(setXSound2);
@@ -75,13 +75,12 @@ class WaveChart {
         invalidateChart(mChartAudio);
     }
 
-    private LineDataSet createSet(String label, String setName, int color) {
+    private LineDataSet createSet() {
         LineDataSet set = new LineDataSet(null, "x");
 
         set.setAxisDependency(YAxis.AxisDependency.LEFT);
         set.setLineWidth(0.5f);
-        set.setLabel(label);
-        set.setColor(color);
+        set.setColor(R.color.blue);
         set.setDrawCircles(false);
         set.setHighlightEnabled(false);
         set.setDrawValues(false);
