@@ -13,6 +13,7 @@ import java.util.Objects;
 
 class AudioService {
     private static final String LOG_TAG = AudioService.class.getSimpleName();
+
     private Context context;
     private MediaRecorder mRecorder = null;
     private MediaPlayer mPlayer = null;
@@ -21,7 +22,7 @@ class AudioService {
     private double lastMax = 100.0d;
 
     private long start_time = 0;
-    private int UPDATE_DELAY = 20; //millisecond
+    private int DATA_COLLECTION_FREQ = 20; //millisecond
 
     private Boolean running = false;
 
@@ -73,7 +74,7 @@ class AudioService {
             public void run() {
                 while (running) {
                     //Log.d("Added Index: ", "" + amplitudes.size());
-                    int indexTo = (int) ((System.currentTimeMillis() - start_time) / UPDATE_DELAY);
+                    int indexTo = (int) ((System.currentTimeMillis() - start_time) / DATA_COLLECTION_FREQ);
 
                     for (int i = amplitudes.size(); i < indexTo; i++) {
                         amplitudes.add(i, getAmplitudeDb());

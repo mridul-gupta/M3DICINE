@@ -7,7 +7,7 @@
     android:orientation="vertical">
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/tv_view_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
@@ -18,7 +18,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/bt_top_button"
+        android:id="@+id/bt_status"
         android:layout_width="130dp"
         android:layout_height="32dp"
         android:layout_marginTop="64dp"
@@ -29,7 +29,7 @@
         android:textColor="@android:color/white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+        app:layout_constraintTop_toBottomOf="@+id/tv_view_name" />
 
     <com.github.mikephil.charting.charts.LineChart
         android:id="@+id/chart_audio"
@@ -39,7 +39,7 @@
         android:clickable="false"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/bt_top_button" />
+        app:layout_constraintTop_toBottomOf="@id/bt_status" />
 
     <View
         android:id="@+id/v_playhead"
@@ -53,7 +53,7 @@
         tools:visibility="visible"/>
 
     <ImageButton
-        android:id="@+id/bt_action"
+        android:id="@+id/bt_recordplay"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
@@ -64,7 +64,7 @@
         app:layout_constraintTop_toBottomOf="@+id/chart_audio" />
 
     <Button
-        android:id="@+id/bottom_button"
+        android:id="@+id/bt_bottom"
         android:layout_width="130dp"
         android:layout_height="32dp"
         android:layout_marginTop="8dp"
@@ -75,6 +75,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/bt_action" />
+        app:layout_constraintTop_toBottomOf="@+id/bt_recordplay" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
