@@ -95,13 +95,13 @@ class SoundService {
 
     //ToDo: cleanup
     private double getAmplitude() {
-        if (this.mRecorder == null) {
-            return this.lastMax;
-        }
-
-        double maxAmp = (double) this.mRecorder.getMaxAmplitude();
-        if (maxAmp > 2.0d) {
-            this.lastMax = maxAmp;
+        try {
+            double maxAmp = (double) this.mRecorder.getMaxAmplitude();
+            if (maxAmp > 2.0d) {
+                this.lastMax = maxAmp;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return this.lastMax;
     }
