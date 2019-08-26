@@ -72,7 +72,7 @@ class SoundService {
             @Override
             public void run() {
                 while (running) {
-                    Log.d("Added Index: ", "" + sounds.size());
+                    //Log.d("Added Index: ", "" + sounds.size());
                     int indexTo = (int) ((System.currentTimeMillis() - start_time) / UPDATE_DELAY);
 
                     for (int i = sounds.size(); i < indexTo; i++) {
@@ -125,6 +125,13 @@ class SoundService {
             //Toast.makeText(context, "Failed to play", Toast.LENGTH_SHORT).show();
             Log.e(LOG_TAG, "prepare() failed");
         }
+    }
+
+    int getPlayProgress() {
+        if (mPlayer != null && mPlayer.isPlaying()) {
+            return mPlayer.getCurrentPosition();
+        }
+        return 0;
     }
 
     void stopPlaying() {

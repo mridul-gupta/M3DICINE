@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -39,7 +40,7 @@ public class AudioActivity extends AppCompatActivity {
 
     STATE state = STATE.READYTORECORD;
 
-    private boolean permissionToRecordAccepted = false;
+    private boolean permissionToRecord = false;
     private String[] permissions = {Manifest.permission.RECORD_AUDIO};
 
     ImageButton button = null;
@@ -51,11 +52,21 @@ public class AudioActivity extends AppCompatActivity {
     int usedIndex = 0;
     private Handler mHandler = new Handler();
 
+    int displayWidth;
+
     private Runnable mTickExecutor = new Runnable() {
         @Override
         public void run() {
             tick();
             mHandler.postDelayed(mTickExecutor, UPDATE_DELAY);
+        }
+    };
+
+    private Runnable mPlayTickExecutor = new Runnable() {
+        @Override
+        public void run() {
+            updatePlayingUI();
+            mHandler.postDelayed(mPlayTickExecutor, UPDATE_DELAY);
         }
     };
 
@@ -70,6 +81,10 @@ public class AudioActivity extends AppCompatActivity {
         button = findViewById(R.id.bt_action);
         top_button = findViewById(R.id.bt_top_button);
         LineChart mChartAudio = findViewById(R.id.chart_audio);
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        displayWidth = displayMetrics.widthPixels;
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -97,6 +112,7 @@ public class AudioActivity extends AppCompatActivity {
                         state = STATE.PLAYING;
                         button.setBackground(getDrawable(R.drawable.stop));
                         soundService.startPlaying();
+                        mHandler.postDelayed(mPlayTickExecutor, UPDATE_DELAY);
                         break;
 
                     case PLAYING:
@@ -120,9 +136,9 @@ public class AudioActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
-            permissionToRecordAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            permissionToRecord = grantResults[0] == PackageManager.PERMISSION_GRANTED;
         }
-        if (!permissionToRecordAccepted) {
+        if (!permissionToRecord) {
             Toast.makeText(this, "No permission to record", Toast.LENGTH_SHORT).show();
             finish();
         }
@@ -160,5 +176,13 @@ public class AudioActivity extends AppCompatActivity {
 
             }
         }.start();
+    }
+
+    private void updatePlayingUI() {
+        View playHead = findViewById(R.id.v_playhead);
+        playHead.setVisibility(View.VISIBLE);
+        int curr = soundService.getPlayProgress();
+
+        playHead.setTranslationX(curr * (displayWidth / 20000f));
     }
 }

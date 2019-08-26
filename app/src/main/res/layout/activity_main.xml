@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical">
 
     <TextView
@@ -39,6 +40,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/bt_top_button" />
+
+    <View
+        android:id="@+id/v_playhead"
+        android:layout_width="1dp"
+        android:layout_height="200dp"
+        android:background="@color/red"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/chart_audio"
+        app:layout_constraintTop_toTopOf="@+id/chart_audio"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:visibility="visible"/>
 
     <ImageButton
         android:id="@+id/bt_action"
