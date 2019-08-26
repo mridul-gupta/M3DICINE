@@ -19,7 +19,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.data.LineDataSet;
 
 import java.io.IOException;
 
@@ -54,7 +53,7 @@ public class AudioActivity extends AppCompatActivity {
     private MediaPlayer mPlayer = null;
 
     private boolean permissionToRecordAccepted = false;
-    private String [] permissions = {Manifest.permission.RECORD_AUDIO};
+    private String[] permissions = {Manifest.permission.RECORD_AUDIO};
 
     ImageButton button = null;
     Button top_button = null;
@@ -95,12 +94,13 @@ public class AudioActivity extends AppCompatActivity {
 
                         startRecording();
 
-                        timer = new CountDownTimer(MAX_TIME, 1000){
-                            public void onTick(long millisUntilFinished){
+                        timer = new CountDownTimer(MAX_TIME, 1000) {
+                            public void onTick(long millisUntilFinished) {
                                 top_button.setText(String.valueOf(counter));
                                 counter--;
                             }
-                            public  void onFinish(){
+
+                            public void onFinish() {
                                 stopRecording();
                                 state = STATE.READYTOPLAY;
                                 button.setBackground(getDrawable(R.drawable.play));
@@ -147,7 +147,7 @@ public class AudioActivity extends AppCompatActivity {
         if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
             permissionToRecordAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
         }
-        if (!permissionToRecordAccepted ) {
+        if (!permissionToRecordAccepted) {
             Toast.makeText(this, "No permission to record", Toast.LENGTH_SHORT).show();
             finish();
         }
@@ -200,8 +200,8 @@ public class AudioActivity extends AppCompatActivity {
             double amplitude = getAmplitudeDb();
             current_time = System.currentTimeMillis();
             //Log.d("Voice Recorder: ","amplitude: "+ amplitude + ", " + (current_time - start_time));
-            mChart.addEntry((int)((current_time - start_time)/UPDATE_DELAY), (float)amplitude - 10.0f, 0); //first dataset
-            mChart.addEntry((int)((current_time - start_time)/UPDATE_DELAY), (float)-amplitude + 10.0f, 1); //second dataset
+            mChart.addEntry((int) ((current_time - start_time) / UPDATE_DELAY), (float) amplitude - 10.0f, 0); //first dataset
+            mChart.addEntry((int) ((current_time - start_time) / UPDATE_DELAY), (float) -amplitude + 10.0f, 1); //second dataset
         }
     }
 

@@ -78,7 +78,7 @@ class WaveChart {
         invalidateChart(mChartAudio);
     }
 
-    private LineDataSet createSet (String label, String setName, int color) {
+    private LineDataSet createSet(String label, String setName, int color) {
         LineDataSet set = new LineDataSet(null, "x");
 
         set.setAxisDependency(YAxis.AxisDependency.LEFT);
