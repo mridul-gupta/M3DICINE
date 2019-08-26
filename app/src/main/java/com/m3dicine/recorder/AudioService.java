@@ -58,9 +58,12 @@ class AudioService {
     }
 
     void stopRecording() {
-        mRecorder.stop();
-        mRecorder.release();
-        mRecorder = null;
+        if(mRecorder != null) {
+            mRecorder.stop();
+            mRecorder.release();
+            mRecorder = null;
+            amplitudes.clear();
+        }
         running = false;
 
         //Toast.makeText(context, "Stopped Recording", Toast.LENGTH_SHORT).show();
@@ -73,16 +76,16 @@ class AudioService {
             @Override
             public void run() {
                 while (running) {
-                    //Log.d("Added Index: ", "" + amplitudes.size());
-                    int indexTo = (int) ((System.currentTimeMillis() - start_time) / DATA_COLLECTION_FREQ);
-
-                    for (int i = amplitudes.size(); i < indexTo; i++) {
-                        amplitudes.add(i, getAmplitudeDb());
-                    }
-
                     try {
+                        //Log.d("Added Index: ", "" + amplitudes.size());
+                        int indexTo = (int) ((System.currentTimeMillis() - start_time) / DATA_COLLECTION_FREQ);
+
+                        for (int i = amplitudes.size(); i < indexTo; i++) {
+                            amplitudes.add(i, getAmplitudeDb());
+                        }
+
                         Thread.sleep(20);
-                    } catch (InterruptedException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -102,7 +105,7 @@ class AudioService {
                 this.lastMax = maxAmp;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace(); //Not handled
         }
         return this.lastMax;
     }
@@ -136,14 +139,18 @@ class AudioService {
     }
 
     void stopPlaying() {
-        mPlayer.release();
-        mPlayer = null;
+        if (mPlayer != null) {
+            mPlayer.release();
+            mPlayer = null;
+        }
         //Toast.makeText(context, "Stopped Playing", Toast.LENGTH_SHORT).show();
     }
 
     private void finishPlaying() {
-        mPlayer.release();
-        mPlayer = null;
+        if (mPlayer != null) {
+            mPlayer.release();
+            mPlayer = null;
+        }
         //Toast.makeText(context, "Finished Playing", Toast.LENGTH_SHORT).show();
     }
 }

@@ -21,25 +21,26 @@ import com.github.mikephil.charting.charts.LineChart;
 
 public class AudioActivity extends AppCompatActivity {
     private static final String LOG_TAG = AudioActivity.class.getSimpleName();
+    private String[] permissions = {Manifest.permission.RECORD_AUDIO};
+    private boolean permissionToRecord = false;
+    private int displayWidth;
+
+    private Utils.STATE state = Utils.STATE.READYTORECORD;
 
     private AudioService audioService;
     private WaveChart mChart = new WaveChart();
 
-    Utils.STATE state = Utils.STATE.READYTORECORD;
+    private ImageButton buttonRecordPlay = null;
+    private Button buttonTopStatus = null;
+    private Button buttonBottom = null;
+    private LineChart viewChartAudio = null;
 
-    private boolean permissionToRecord = false;
-    private String[] permissions = {Manifest.permission.RECORD_AUDIO};
+    public int countdownCounter = Utils.MAX_TIME / 1000;
+    private CountDownTimer timer = null;
 
-    ImageButton buttonRecordPlay = null;
-    Button buttonTopStatus = null;
-    public int counter = 20;
-
-    CountDownTimer timer = null;
-
-    int usedIndex = 0;
+    private int usedIndex = 0;
     private Handler mHandler = new Handler();
 
-    int displayWidth;
 
     private Runnable mTickExecutor = new Runnable() {
         @Override
@@ -67,7 +68,8 @@ public class AudioActivity extends AppCompatActivity {
 
         buttonRecordPlay = findViewById(R.id.bt_recordplay);
         buttonTopStatus = findViewById(R.id.bt_status);
-        LineChart mChartAudio = findViewById(R.id.chart_audio);
+        buttonBottom = findViewById(R.id.bt_bottom);
+        viewChartAudio = findViewById(R.id.chart_audio);
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -78,34 +80,19 @@ public class AudioActivity extends AppCompatActivity {
             public void onClick(View view) {
                 switch (state) {
                     case READYTORECORD:
-                        state = Utils.STATE.RECORDING;
-                        buttonRecordPlay.setBackground(getDrawable(R.drawable.stop));
-
-                        audioService.startRecording();
-                        mHandler.postDelayed(mTickExecutor, Utils.UI_UPDATE_FREQ);
-                        uiCountdownTimer();
+                        startRecording();
                         break;
 
                     case RECORDING:
-                        state = Utils.STATE.READYTORECORD;
-                        buttonRecordPlay.setBackground(getDrawable(R.drawable.record));
-
-                        audioService.stopRecording();
-                        mHandler.removeCallbacks(mTickExecutor);
-                        timer.cancel();
+                        stopRecording();
                         break;
 
                     case READYTOPLAY:
-                        state = Utils.STATE.PLAYING;
-                        buttonRecordPlay.setBackground(getDrawable(R.drawable.stop));
-                        audioService.startPlaying();
-                        mHandler.postDelayed(mPlayTickExecutor, Utils.UI_UPDATE_FREQ);
+                        startPlaying();
                         break;
 
                     case PLAYING:
-                        state = Utils.STATE.READYTOPLAY;
-                        buttonRecordPlay.setBackground(getDrawable(R.drawable.play));
-                        audioService.stopPlaying();
+                        stopPlaying();
                         break;
 
                     default:
@@ -116,7 +103,52 @@ public class AudioActivity extends AppCompatActivity {
             }
         });
 
-        mChart.setupChart(mChartAudio);
+        mChart.setupChart(viewChartAudio);
+    }
+
+    private void startRecording() {
+        state = Utils.STATE.RECORDING;
+        buttonRecordPlay.setBackground(getDrawable(R.drawable.stop));
+        buttonBottom.setEnabled(true);
+
+        audioService.startRecording();
+        mHandler.postDelayed(mTickExecutor, Utils.UI_UPDATE_FREQ);
+        uiCountdownTimer();
+    }
+
+    private void stopRecording() {
+        state = Utils.STATE.READYTORECORD;
+        buttonRecordPlay.setBackground(getDrawable(R.drawable.record));
+        buttonTopStatus.setText(R.string.ready);
+        buttonBottom.setEnabled(false);
+
+        viewChartAudio.clearValues();
+        mChart.setupChart(viewChartAudio);
+        audioService.stopRecording();
+
+        usedIndex = 0;
+        countdownCounter = Utils.MAX_TIME / 1000;
+        mHandler.removeCallbacks(mTickExecutor);
+        timer.cancel();
+    }
+
+    private void startPlaying() {
+        state = Utils.STATE.PLAYING;
+        buttonRecordPlay.setBackground(getDrawable(R.drawable.stop));
+        audioService.startPlaying();
+        mHandler.postDelayed(mPlayTickExecutor, Utils.UI_UPDATE_FREQ);
+    }
+
+    private void stopPlaying() {
+        state = Utils.STATE.READYTOPLAY;
+        buttonRecordPlay.setBackground(getDrawable(R.drawable.play));
+        audioService.stopPlaying();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        audioService.stopRecording();
     }
 
     @Override
@@ -137,7 +169,7 @@ public class AudioActivity extends AppCompatActivity {
             int currentIndex = audioService.amplitudes.size();
 
 
-            //Log.d("Plotting: ","used: "+ usedIndex + ", current: " + currentIndex);
+            //Log.d("Plotting: ","used: "+ usedIndex + ", current: " + currentIndex + ", " + viewChartAudio.getData().getDataSetCount());
             for (int i = usedIndex; i < currentIndex; i++) {
                 double amplitude = audioService.amplitudes.get(i);
                 //Log.d("Voice Recorder: ","amplitude: "+ amplitude + ", " + (current_time - start_time));
@@ -151,8 +183,8 @@ public class AudioActivity extends AppCompatActivity {
     private void uiCountdownTimer() {
         timer = new CountDownTimer(Utils.MAX_TIME, 1000) {
             public void onTick(long millisUntilFinished) {
-                buttonTopStatus.setText(String.valueOf(counter));
-                counter--;
+                buttonTopStatus.setText(String.valueOf(countdownCounter));
+                countdownCounter--;
             }
 
             public void onFinish() {

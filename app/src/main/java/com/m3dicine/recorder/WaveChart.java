@@ -93,10 +93,6 @@ class WaveChart {
         chart.notifyDataSetChanged();
         chart.getData().notifyDataChanged();
         chart.invalidate();
-
-        chart.notifyDataSetChanged();
-        chart.getData().notifyDataChanged();
-        chart.invalidate();
     }
 
 }
