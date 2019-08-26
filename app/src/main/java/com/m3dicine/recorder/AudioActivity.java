@@ -19,6 +19,8 @@ import androidx.core.app.ActivityCompat;
 
 import com.github.mikephil.charting.charts.LineChart;
 
+import java.util.Locale;
+
 
 public class AudioActivity extends AppCompatActivity {
     private static final String LOG_TAG = AudioActivity.class.getSimpleName();
@@ -34,6 +36,7 @@ public class AudioActivity extends AppCompatActivity {
     private TextView    textStatus = null;
     private Button      buttonTopStatus = null;
     private LineChart   viewChartAudio = null;
+    private TextView    playCounter = null;
     private View        playHead = null;
     private ImageButton buttonRecordPlay = null;
     private Button      buttonBottom = null;
@@ -72,6 +75,7 @@ public class AudioActivity extends AppCompatActivity {
         textStatus          = findViewById(R.id.tv_view_name);
         buttonTopStatus     = findViewById(R.id.bt_status);
         viewChartAudio      = findViewById(R.id.chart_audio);
+        playCounter         = findViewById(R.id.tv_play_counter);
         playHead            = findViewById(R.id.v_playhead);
         buttonRecordPlay    = findViewById(R.id.bt_recordplay);
         buttonBottom        = findViewById(R.id.bt_bottom);
@@ -160,6 +164,7 @@ public class AudioActivity extends AppCompatActivity {
     private void startPlaying() {
         state = Utils.STATE.PLAYING;
         buttonRecordPlay.setBackground(getDrawable(R.drawable.stop));
+        playCounter.setVisibility(View.VISIBLE);
         playHead.setVisibility(View.VISIBLE);
         audioService.startPlaying();
         mHandler.postDelayed(mPlayTickExecutor, Utils.UI_UPDATE_FREQ);
@@ -170,6 +175,8 @@ public class AudioActivity extends AppCompatActivity {
         buttonRecordPlay.setBackground(getDrawable(R.drawable.play));
         mHandler.removeCallbacks(mPlayTickExecutor);
 
+        playCounter.setVisibility(View.VISIBLE);
+        playCounter.setText(String.format(Locale.getDefault(), "%.2f s", 0.00f));
         playHead.setVisibility(View.GONE);
         playHead.setTranslationX(0);
         audioService.stopPlaying();
@@ -221,6 +228,8 @@ public class AudioActivity extends AppCompatActivity {
                 audioService.stopRecording();
                 state = Utils.STATE.READYTOPLAY;
                 textStatus.setText(R.string.playback_view);
+                playCounter.setVisibility(View.VISIBLE);
+                playCounter.setText(String.format(Locale.getDefault(), "%.2f s", 0.00f));
                 buttonRecordPlay.setBackground(getDrawable(R.drawable.play));
                 buttonTopStatus.setText(R.string.ready);
                 buttonBottom.setText(R.string.back_rec);
@@ -233,6 +242,7 @@ public class AudioActivity extends AppCompatActivity {
     private void updatePlayingUI() {
         int curr = audioService.getPlayProgress();
 
+        playCounter.setText(String.format(Locale.getDefault(), "%.2f s", (curr/1000f)));
         playHead.setTranslationX(curr * (displayWidth / 20000f));
     }
 }
