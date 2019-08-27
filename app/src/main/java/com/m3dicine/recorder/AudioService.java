@@ -3,6 +3,7 @@ package com.m3dicine.recorder;
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
+import android.os.Handler;
 import android.os.PowerManager;
 import android.util.Log;
 
@@ -11,8 +12,9 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 
-class AudioService {
+final class AudioService {
     private static final String LOG_TAG = AudioService.class.getSimpleName();
+    private Utils.STATE state = Utils.STATE.READYTORECORD;
 
     private Context context;
     private MediaRecorder mRecorder = null;
@@ -29,6 +31,15 @@ class AudioService {
 
     final ArrayList<Double> amplitudes; //index, amp
 
+    private Handler mHandler = new Handler();
+    private Runnable mPlayProgressExecutor = new Runnable() {
+        @Override
+        public void run() {
+            updatePlayProgress(((AudioCallback)context));
+            mHandler.postDelayed(mPlayProgressExecutor, Utils.UI_UPDATE_FREQ);
+        }
+    };
+
     AudioService(Context mContext) {
         this.context = mContext;
         amplitudes = new ArrayList<>();
@@ -37,12 +48,13 @@ class AudioService {
         fileName += "/audiorecordtest.3gp";
     }
 
-    void startRecording() {
+    void startRecording(final AudioCallback callback) {
         mRecorder = new MediaRecorder();
         mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
         mRecorder.setOutputFile(fileName);
         mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        mRecorder.setMaxDuration(Utils.MAX_TIME);
 
         try {
             mRecorder.prepare();
@@ -50,8 +62,29 @@ class AudioService {
             Log.e(LOG_TAG, "prepare() failed");
         }
 
+        mRecorder.setOnInfoListener(new MediaRecorder.OnInfoListener() {
+            @Override
+            public void onInfo(MediaRecorder mediaRecorder, int what, int extra) {
+                if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) {
+                    //Done recording
+                    stopRecording();
+                    state = Utils.STATE.READYTOPLAY;
+                    callback.onRecordingCompleted();
+                }
+            }
+        });
+
+
+        mRecorder.setOnErrorListener(new MediaRecorder.OnErrorListener() {
+            @Override
+            public void onError(MediaRecorder mediaRecorder, int i, int i1) {
+                callback.onRecordingError();
+            }
+        });
+
         mRecorder.start();
         start_time = System.currentTimeMillis();
+        state = Utils.STATE.RECORDING;
 
         startUpdateData();
     }
@@ -64,6 +97,7 @@ class AudioService {
             amplitudes.clear();
         }
         running = false;
+        state = Utils.STATE.READYTORECORD;
     }
 
     private void startUpdateData() {
@@ -80,7 +114,7 @@ class AudioService {
                             amplitudes.add(i, getAmplitudeDb());
                         }
 
-                        Thread.sleep(20);
+                        Thread.sleep(DATA_COLLECTION_FREQ);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -89,6 +123,7 @@ class AudioService {
         }).start();
     }
 
+    //ToDo: better amp calculation
     private double getAmplitudeDb() {
         return 20.0d * Math.log10(getAmplitude());
     }
@@ -106,26 +141,44 @@ class AudioService {
         return this.lastMax;
     }
 
-    void startPlaying() {
+    void startPlaying(final AudioCallback callback) {
         mPlayer = new MediaPlayer();
         try {
             mPlayer.setDataSource(fileName);
             mPlayer.setWakeMode(context.getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             mPlayer.prepare();
-            mPlayer.start();
 
             mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                 @Override
                 public void onCompletion(MediaPlayer mediaPlayer) {
-                    finishPlaying();
+                    stopPlaying();
+                    state = Utils.STATE.READYTOPLAY;
+                    callback.onPlaybackCompleted();
                 }
             });
+
+            mPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                @Override
+                public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
+                    stopPlaying();
+                    callback.onPlaybackError();
+                    return false;
+                }
+            });
+            mPlayer.start();
+
+            mHandler.postDelayed(mPlayProgressExecutor, Utils.UI_UPDATE_FREQ);
+            state = Utils.STATE.PLAYING;
         } catch (IOException e) {
             Log.e(LOG_TAG, "prepare() failed");
         }
     }
 
-    int getPlayProgress() {
+    private void updatePlayProgress(final AudioCallback callback) {
+        callback.onPlaybackProgress(getPlayProgress());
+    }
+
+    private int getPlayProgress() {
         if (mPlayer != null && mPlayer.isPlaying()) {
             return mPlayer.getCurrentPosition();
         }
@@ -137,12 +190,11 @@ class AudioService {
             mPlayer.release();
             mPlayer = null;
         }
+        state = Utils.STATE.READYTOPLAY;
+        mHandler.removeCallbacks(mPlayProgressExecutor);
     }
 
-    private void finishPlaying() {
-        if (mPlayer != null) {
-            mPlayer.release();
-            mPlayer = null;
-        }
+    Utils.STATE getState() {
+        return this.state;
     }
 }

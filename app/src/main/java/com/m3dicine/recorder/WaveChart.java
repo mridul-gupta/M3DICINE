@@ -11,7 +11,7 @@ import com.github.mikephil.charting.formatter.DefaultAxisValueFormatter;
 class WaveChart {
     private LineChart mChartAudio = null;
 
-    private int MAX_TIME = 20000; //millisecond
+    private int MAX_TIME = Utils.MAX_TIME; //millisecond
     private int UPDATE_DELAY = 20; //millisecond
     private int MAX_X_ENTRIES = MAX_TIME / UPDATE_DELAY;
 

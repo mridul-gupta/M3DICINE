@@ -22,13 +22,12 @@ import com.github.mikephil.charting.charts.LineChart;
 import java.util.Locale;
 
 
-public class AudioActivity extends AppCompatActivity {
+public class AudioActivity extends AppCompatActivity implements AudioCallback {
     private static final String LOG_TAG = AudioActivity.class.getSimpleName();
     private String[] permissions = {Manifest.permission.RECORD_AUDIO};
     private boolean permissionToRecord = false;
     private int displayWidth;
 
-    private Utils.STATE state = Utils.STATE.READYTORECORD;
 
     private AudioService audioService;
     private WaveChart mChart = new WaveChart();
@@ -56,14 +55,6 @@ public class AudioActivity extends AppCompatActivity {
         }
     };
 
-    private Runnable mPlayTickExecutor = new Runnable() {
-        @Override
-        public void run() {
-            updatePlayingUI();
-            mHandler.postDelayed(mPlayTickExecutor, Utils.UI_UPDATE_FREQ);
-        }
-    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -87,7 +78,7 @@ public class AudioActivity extends AppCompatActivity {
         buttonRecordPlay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                switch (state) {
+                switch (audioService.getState()) {
                     case READYTORECORD:
                         startRecording();
                         break;
@@ -105,8 +96,6 @@ public class AudioActivity extends AppCompatActivity {
                         break;
 
                     default:
-                        state = Utils.STATE.READYTORECORD;
-                        buttonRecordPlay.setBackground(getDrawable(R.drawable.record));
                         Log.e(LOG_TAG, "Wrong state");
                 }
             }
@@ -115,7 +104,7 @@ public class AudioActivity extends AppCompatActivity {
         buttonBottom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                switch (state) {
+                switch (audioService.getState()) {
                     case READYTOPLAY:
                     case PLAYING:
                         stopPlaying();
@@ -134,20 +123,20 @@ public class AudioActivity extends AppCompatActivity {
     }
 
     private void startRecording() {
-        state = Utils.STATE.RECORDING;
         buttonRecordPlay.setBackground(getDrawable(R.drawable.stop));
         buttonBottom.setEnabled(false);
 
-        audioService.startRecording();
+        audioService.startRecording(this);
         mHandler.postDelayed(mTickExecutor, Utils.UI_UPDATE_FREQ);
         uiCountdownTimer();
     }
 
     private void stopRecording() {
-        state = Utils.STATE.READYTORECORD;
         textStatus.setText(R.string.recording_view);
         buttonRecordPlay.setBackground(getDrawable(R.drawable.record));
         buttonTopStatus.setText(R.string.ready);
+        buttonTopStatus.setVisibility(View.VISIBLE);
+        playCounter.setVisibility(View.GONE);
         buttonBottom.setText(R.string.playback_now);
         buttonBottom.setEnabled(false);
 
@@ -161,25 +150,58 @@ public class AudioActivity extends AppCompatActivity {
         timer.cancel();
     }
 
+    @Override
+    public void onRecordingCompleted() {
+        Log.d(LOG_TAG, "onRecordingCompleted");
+
+        textStatus.setText(R.string.playback_view);
+        playCounter.setVisibility(View.VISIBLE);
+        playCounter.setText(String.format(Locale.getDefault(), "%.2f s", 0.00f));
+        buttonRecordPlay.setBackground(getDrawable(R.drawable.play));
+        buttonTopStatus.setVisibility(View.INVISIBLE);
+        buttonTopStatus.setText(R.string.ready);
+        buttonBottom.setText(R.string.back_rec);
+        buttonBottom.setEnabled(true);
+    }
+
+    @Override
+    public void onRecordingError() {
+        Log.e(LOG_TAG, "Error recording media");
+    }
+
     private void startPlaying() {
-        state = Utils.STATE.PLAYING;
         buttonRecordPlay.setBackground(getDrawable(R.drawable.stop));
         playCounter.setVisibility(View.VISIBLE);
         playHead.setVisibility(View.VISIBLE);
-        audioService.startPlaying();
-        mHandler.postDelayed(mPlayTickExecutor, Utils.UI_UPDATE_FREQ);
+        audioService.startPlaying(this);
     }
 
     private void stopPlaying() {
-        state = Utils.STATE.READYTOPLAY;
         buttonRecordPlay.setBackground(getDrawable(R.drawable.play));
-        mHandler.removeCallbacks(mPlayTickExecutor);
-
         playCounter.setVisibility(View.VISIBLE);
         playCounter.setText(String.format(Locale.getDefault(), "%.2f s", 0.00f));
         playHead.setVisibility(View.GONE);
         playHead.setTranslationX(0);
         audioService.stopPlaying();
+    }
+
+    @Override
+    public void onPlaybackProgress(int currentTime) {
+        Log.d(LOG_TAG, "onPlaybackProgress");
+
+        playCounter.setText(String.format(Locale.getDefault(), "%.2f s", (currentTime / 1000f)));
+        playHead.setTranslationX(currentTime * (displayWidth / (float) Utils.MAX_TIME));
+    }
+
+    @Override
+    public void onPlaybackCompleted() {
+        Log.d(LOG_TAG, "onPlaybackCompleted");
+        stopPlaying();
+    }
+
+    @Override
+    public void onPlaybackError() {
+        Log.e(LOG_TAG, "Error playing media");
     }
 
     @Override
@@ -202,7 +224,7 @@ public class AudioActivity extends AppCompatActivity {
 
 
     private void tick() {
-        if (state == Utils.STATE.RECORDING) {
+        if (audioService.getState() == Utils.STATE.RECORDING) {
             int currentIndex = audioService.amplitudes.size();
 
 
@@ -225,24 +247,8 @@ public class AudioActivity extends AppCompatActivity {
             }
 
             public void onFinish() {
-                audioService.stopRecording();
-                state = Utils.STATE.READYTOPLAY;
-                textStatus.setText(R.string.playback_view);
-                playCounter.setVisibility(View.VISIBLE);
-                playCounter.setText(String.format(Locale.getDefault(), "%.2f s", 0.00f));
-                buttonRecordPlay.setBackground(getDrawable(R.drawable.play));
-                buttonTopStatus.setText(R.string.ready);
-                buttonBottom.setText(R.string.back_rec);
-                buttonBottom.setEnabled(true);
 
             }
         }.start();
-    }
-
-    private void updatePlayingUI() {
-        int curr = audioService.getPlayProgress();
-
-        playCounter.setText(String.format(Locale.getDefault(), "%.2f s", (curr/1000f)));
-        playHead.setTranslationX(curr * (displayWidth / 20000f));
     }
 }
