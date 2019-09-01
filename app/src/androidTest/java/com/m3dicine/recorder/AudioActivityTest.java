@@ -10,6 +10,10 @@ import android.widget.TextView;
 import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.filters.LargeTest;
 import androidx.test.rule.ActivityTestRule;
+import androidx.test.uiautomator.UiDevice;
+import androidx.test.uiautomator.UiObject;
+import androidx.test.uiautomator.UiObjectNotFoundException;
+import androidx.test.uiautomator.UiSelector;
 
 import com.github.mikephil.charting.charts.LineChart;
 
@@ -25,6 +29,8 @@ import static androidx.test.espresso.matcher.ViewMatchers.isEnabled;
 import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
+import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
+import static java.lang.Thread.sleep;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertTrue;
 
@@ -44,6 +50,7 @@ public class AudioActivityTest {
     @Before
     public void setUp() {
         audioActivity = rule.getActivity();
+        allowPermissionsIfNeeded();
     }
 
 
@@ -61,12 +68,12 @@ public class AudioActivityTest {
     @Test
     public void recordAudio() {
         try {
-            Thread.sleep(1000);
+            sleep(1000);
 
             onView(withId(R.id.bt_recordplay)).perform(click());
 
             /* wait for recording to finish */
-            Thread.sleep(Utils.MAX_TIME + 1000);
+            sleep(Utils.MAX_TIME + 1000);
 
             /* check ui state post recording */
             onView(withId(R.id.tv_status)).check(matches(withText(R.string.playback_view)));
@@ -95,7 +102,7 @@ public class AudioActivityTest {
             mOutputTrackType = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
             mOutputDuration = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
 
-            Thread.sleep(1000);
+            sleep(1000);
 
             mmr.release();
         } catch (Exception e) {
@@ -116,6 +123,22 @@ public class AudioActivityTest {
             validAudio = true;
         }
         return validAudio;
+    }
+
+    private static void allowPermissionsIfNeeded() {
+        try {
+            sleep(1000);
+
+            UiDevice device = UiDevice.getInstance(getInstrumentation());
+            UiObject allowPermissions = device.findObject(new UiSelector().text("Allow"));
+            if (allowPermissions.exists()) {
+                allowPermissions.click();
+            }
+        } catch (UiObjectNotFoundException e) {
+            System.out.println("There is no permissions dialog to interact with");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
 
