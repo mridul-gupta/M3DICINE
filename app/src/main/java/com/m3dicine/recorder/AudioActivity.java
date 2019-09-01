@@ -42,6 +42,7 @@ public class AudioActivity extends AppCompatActivity implements AudioCallback {
 
     public int countdownCounter = Utils.MAX_TIME / 1000;
     private CountDownTimer timer = null;
+    int currentPlayProgress = 0;
 
     private int usedIndex = 0;
     private Handler mHandler = new Handler();
@@ -183,13 +184,16 @@ public class AudioActivity extends AppCompatActivity implements AudioCallback {
         playHead.setVisibility(View.GONE);
         playHead.setTranslationX(0);
         audioService.stopPlaying();
+
+        currentPlayProgress = 0;
     }
 
     @Override
     public void onPlaybackProgress(int currentTime) {
+        currentPlayProgress = currentTime;
         Log.d(LOG_TAG, "onPlaybackProgress");
 
-        playCounter.setText(String.format(Locale.getDefault(), "%.2f s", (currentTime / 1000f)));
+        playCounter.setText(String.format(Locale.getDefault(), "%.2f s", (currentPlayProgress / 1000f)));
         playHead.setTranslationX(currentTime * (displayWidth / (float) Utils.MAX_TIME));
     }
 
@@ -202,6 +206,7 @@ public class AudioActivity extends AppCompatActivity implements AudioCallback {
     @Override
     public void onPlaybackError() {
         Log.e(LOG_TAG, "Error playing media");
+        stopPlaying();
     }
 
     @Override

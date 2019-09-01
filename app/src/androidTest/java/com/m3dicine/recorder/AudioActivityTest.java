@@ -1,6 +1,7 @@
 package com.m3dicine.recorder;
 
 import android.media.MediaMetadataRetriever;
+import android.media.MediaPlayer;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -31,7 +32,9 @@ import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static java.lang.Thread.sleep;
+import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @LargeTest
@@ -66,7 +69,67 @@ public class AudioActivityTest {
     }
 
     @Test
-    public void recordAudio() {
+    public void checkAllViewsIdle() {
+        onView(withId(R.id.tv_status)).check(matches(withText(R.string.recording_view)))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.bt_status)).check(matches(withText(R.string.ready)))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.chart_audio)).check(matches(notNullValue()))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.tv_play_counter)).check(matches(notNullValue()))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+        onView(withId(R.id.v_playhead)).check(matches(notNullValue()))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+        onView(withId(R.id.bt_recordplay)).check(matches(notNullValue()))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.bt_bottom)).check(matches(notNullValue()))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+                .check(matches(not(isEnabled())));
+    }
+
+    private void checkAllViewsPlayIdle() {
+        onView(withId(R.id.tv_status)).check(matches(withText(R.string.playback_view)))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.bt_status)).check(matches(withText(R.string.ready)))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.INVISIBLE)));
+
+        onView(withId(R.id.chart_audio)).check(matches(notNullValue()))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.tv_play_counter)).check(matches(notNullValue()))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.v_playhead)).check(matches(notNullValue()))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+        onView(withId(R.id.bt_recordplay)).check(matches(notNullValue()))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.bt_bottom)).check(matches(notNullValue()))
+                .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+                .check(matches(isEnabled()));
+    }
+
+
+    @Test
+    public void recordAndPlayAudio() {
+
+        /* Check recording */
+        recordAudio();
+
+        /* Check play */
+        playAudio();
+    }
+
+
+    private void recordAudio() {
         try {
             sleep(1000);
 
@@ -76,13 +139,7 @@ public class AudioActivityTest {
             sleep(Utils.MAX_TIME + 1000);
 
             /* check ui state post recording */
-            onView(withId(R.id.tv_status)).check(matches(withText(R.string.playback_view)));
-            //onView(withId(R.id.bt_recordplay)).check(matches(withDrawable(R.drawable.record)));
-            onView(withId(R.id.bt_status)).check(matches(withText(R.string.ready)));
-            onView(withId(R.id.bt_status)).check(matches(withEffectiveVisibility(ViewMatchers.Visibility.INVISIBLE)));
-            onView(withId(R.id.tv_play_counter)).check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
-            onView(withId(R.id.bt_bottom)).check(matches(withText(R.string.back_rec)));
-            onView(withId(R.id.bt_bottom)).check(matches(isEnabled()));
+            checkAllViewsPlayIdle();
 
             /* check recorded file buffer  */
             assertTrue(validateAudio());
@@ -91,6 +148,133 @@ public class AudioActivityTest {
             throwable.printStackTrace();
         }
     }
+
+    private void playAudio() {
+        MediaPlayer mediaPlayer = new MediaPlayer();
+
+        try {
+            mediaPlayer.setDataSource(Utils.getOutputFileName(audioActivity));
+            sleep(1000);
+
+            /* click on play button */
+            onView(withId(R.id.bt_recordplay)).perform(click());
+
+            for (int runTime = 0; runTime <= Utils.MAX_TIME/1000; runTime++) {
+
+                assertEquals(audioActivity.currentPlayProgress / 1000, runTime);
+                sleep(1000);
+            }
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void recordAudioInterrupted() {
+        try {
+            sleep(1000);
+
+            onView(withId(R.id.bt_recordplay)).perform(click());
+
+            /* wait for 3 secs and stop */
+            sleep(3000);
+
+            onView(withId(R.id.bt_recordplay)).perform(click());
+
+            /* check ui state post stop recording */
+            checkAllViewsIdle();
+
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
+    }
+
+    @Test
+    public void recordAudioPlayInterrupted() {
+
+        /* Check recording */
+        recordAudio();
+
+        /* play and interrupt after 3 seconds */
+        MediaPlayer mediaPlayer = new MediaPlayer();
+
+        try {
+            mediaPlayer.setDataSource(Utils.getOutputFileName(audioActivity));
+            sleep(1000);
+
+            /* click on play button */
+            onView(withId(R.id.bt_recordplay)).perform(click());
+
+            /* wait for 3 secs and stop */
+            sleep(3000);
+
+            onView(withId(R.id.bt_recordplay)).perform(click());
+
+            /* check ui state post stopping. (same as post recording) */
+            checkAllViewsPlayIdle();
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @Test
+    public void recordAudioPlayInterruptedGoBack() {
+
+        /* Check recording */
+        recordAudio();
+
+        /* play and interrupt after 3 seconds */
+        MediaPlayer mediaPlayer = new MediaPlayer();
+
+        try {
+            mediaPlayer.setDataSource(Utils.getOutputFileName(audioActivity));
+            sleep(1000);
+
+            /* click on play button */
+            onView(withId(R.id.bt_recordplay)).perform(click());
+
+            /* wait for 3 secs and stop */
+            sleep(3000);
+
+            onView(withId(R.id.bt_recordplay)).perform(click());
+
+            /* check ui state post stopping. (same as post recording) */
+            checkAllViewsPlayIdle();
+
+            /* wait for 1 secs and go back*/
+            sleep(1000);
+
+            /* go back */
+            onView(withId(R.id.bt_bottom)).perform(click());
+
+            /* check recording UI */
+            checkAllViewsIdle();
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @Test
+    public void recordAudioPlayGoBack() {
+
+        /* Check recording */
+        recordAudio();
+
+        /* Check play */
+        playAudio();
+
+        /* go back */
+        onView(withId(R.id.bt_bottom)).perform(click());
+
+        /* check recording UI */
+        checkAllViewsIdle();
+    }
+
 
     private void getOutputAudioProperty(String outputFilePath) {
         MediaMetadataRetriever mmr = new MediaMetadataRetriever();
