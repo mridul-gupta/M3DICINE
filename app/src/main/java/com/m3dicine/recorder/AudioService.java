@@ -44,8 +44,7 @@ final class AudioService {
         this.context = mContext;
         amplitudes = new ArrayList<>();
 
-        fileName = Objects.requireNonNull(context.getExternalCacheDir()).getAbsolutePath();
-        fileName += "/audiorecordtest.3gp";
+        fileName = Utils.getOutputFileName(context);
     }
 
     void startRecording(final AudioCallback callback) {
