@@ -63,7 +63,7 @@ public class AudioActivity extends AppCompatActivity implements AudioCallback {
         audioService = new AudioService(this);
         ActivityCompat.requestPermissions(this, permissions, Utils.REQUEST_RECORD_AUDIO_PERMISSION);
 
-        textStatus          = findViewById(R.id.tv_view_name);
+        textStatus          = findViewById(R.id.tv_status);
         buttonTopStatus     = findViewById(R.id.bt_status);
         viewChartAudio      = findViewById(R.id.chart_audio);
         playCounter         = findViewById(R.id.tv_play_counter);
