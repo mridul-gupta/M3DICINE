@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.m3dicine.recorder.AudioActivityTest" tests="7" failures="0" errors="0" skipped="0" time="169.971" timestamp="2019-09-01T12:54:50" hostname="localhost">
+  <properties>
+    <property name="device" value="X526 - 9" />
+    <property name="flavor" value="" />
+    <property name="project" value="app" />
+  </properties>
+  <testcase name="recordAndPlayAudio" classname="com.m3dicine.recorder.AudioActivityTest" time="48.171" />
+  <testcase name="recordAudioPlayInterruptedGoBack" classname="com.m3dicine.recorder.AudioActivityTest" time="31.453" />
+  <testcase name="checkAllViews" classname="com.m3dicine.recorder.AudioActivityTest" time="1.481" />
+  <testcase name="recordAudioPlayInterrupted" classname="com.m3dicine.recorder.AudioActivityTest" time="29.906" />
+  <testcase name="checkAllViewsIdle" classname="com.m3dicine.recorder.AudioActivityTest" time="1.454" />
+  <testcase name="recordAudioInterrupted" classname="com.m3dicine.recorder.AudioActivityTest" time="6.305" />
+  <testcase name="recordAudioPlayGoBack" classname="com.m3dicine.recorder.AudioActivityTest" time="46.719" />
+</testsuite>
